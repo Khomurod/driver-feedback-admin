@@ -2,9 +2,13 @@ const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6";
 const QUESTIONS_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/questions`;
 
 async function loadQuestions() {
-  const res = await fetch(QUESTIONS_URL);
-  const data = await res.json();
-  render(data.questions || []);
+  try {
+    const res = await fetch(QUESTIONS_URL);
+    const data = await res.json();
+    render(data.questions || []);
+  } catch {
+    render([]);
+  }
 }
 
 async function addQuestion() {
@@ -12,7 +16,10 @@ async function addQuestion() {
   if (!input.value) return;
 
   const res = await fetch(QUESTIONS_URL);
-  const data = await res.json();
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {}
 
   const questions = data.questions || [];
   questions.push(input.value);
@@ -32,7 +39,7 @@ function render(questions) {
   list.innerHTML = "";
   questions.forEach(q => {
     const li = document.createElement("li");
-    li.innerText = q;
+    li.textContent = q;
     list.appendChild(li);
   });
 }
