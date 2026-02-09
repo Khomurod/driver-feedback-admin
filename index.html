@@ -1,29 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Driver Feedback Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>Driver Feedback Admin Panel</h1>
+<h1>Driver Feedback – Admin Panel</h1>
 
-  <h2>Add Question</h2>
-<input id="question" placeholder="Type your question">
+<div class="box">
+  <input id="question" placeholder="Question text">
 
-<select id="type">
-  <option value="text">Text answer</option>
-  <option value="choice">Multiple choice</option>
-  <option value="both">Multiple choice + text</option>
-</select>
+  <select id="type">
+    <option value="text">Text answer</option>
+    <option value="choice">Multiple choice</option>
+    <option value="both">Multiple choice + text</option>
+  </select>
 
-<input id="options" placeholder="Choices (comma separated)">
+  <input id="options" placeholder="Choices (comma separated)">
+  <button onclick="addQuestion()">Add Question</button>
+</div>
 
-<button onclick="addQuestion()">Add</button>
+<h2>Saved Questions</h2>
+<ul id="questions"></ul>
 
-  <h2>Questions</h2>
-  <ul id="questions"></ul>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

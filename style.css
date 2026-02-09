@@ -3,12 +3,21 @@ body {
   padding: 20px;
 }
 
-input {
-  padding: 5px;
-  width: 300px;
+.box {
+  margin-bottom: 20px;
+}
+
+input, select {
+  display: block;
+  margin-bottom: 10px;
+  padding: 6px;
+  width: 320px;
 }
 
 button {
-  padding: 6px 12px;
-  margin-left: 5px;
+  padding: 6px 14px;
+}
+
+li {
+  margin-bottom: 6px;
 }

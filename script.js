@@ -12,17 +12,27 @@ async function loadQuestions() {
 }
 
 async function addQuestion() {
-  const input = document.getElementById("question");
-  if (!input.value) return;
+  const text = document.getElementById("question").value.trim();
+  const type = document.getElementById("type").value;
+  const rawOptions = document.getElementById("options").value;
 
-  const res = await fetch(QUESTIONS_URL);
+  if (!text) return alert("Question text required");
+
+  const options =
+    type === "text"
+      ? []
+      : rawOptions.split(",").map(o => o.trim()).filter(Boolean);
+
+  const question = { text, type, options };
+
   let data = {};
   try {
+    const res = await fetch(QUESTIONS_URL);
     data = await res.json();
   } catch {}
 
   const questions = data.questions || [];
-  questions.push(input.value);
+  questions.push(question);
 
   await fetch(QUESTIONS_URL, {
     method: "POST",
@@ -30,16 +40,21 @@ async function addQuestion() {
     body: JSON.stringify({ questions })
   });
 
-  input.value = "";
+  document.getElementById("question").value = "";
+  document.getElementById("options").value = "";
+
   loadQuestions();
 }
 
 function render(questions) {
   const list = document.getElementById("questions");
   list.innerHTML = "";
+
   questions.forEach(q => {
     const li = document.createElement("li");
-    li.textContent = q;
+    let text = `${q.text} (${q.type})`;
+    if (q.options.length) text += ` → [${q.options.join(", ")}]`;
+    li.textContent = text;
     list.appendChild(li);
   });
 }
