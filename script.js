@@ -1,4 +1,4 @@
-const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/42f7bc17-4c7d-4314-9a0d-19f876d39db6/basket/admin";
+const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/YOUR_PANTRY_ID/basket/questions";
 
 let data = {
   questions: [],

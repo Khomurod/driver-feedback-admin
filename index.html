@@ -1,51 +1,119 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Driver Feedback Admin Panel</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/YOUR_PANTRY_ID/basket/admin";
 
-<h1>Driver Feedback Admin Panel</h1>
+let data = {
+  questions: [],
+  groups: []
+};
 
-<!-- ADD QUESTION -->
-<h2>Add / Edit Question</h2>
+// LOAD DATA
+async function loadData() {
+  const res = await fetch(PANTRY_URL);
+  if (res.ok) {
+    data = await res.json();
+  }
+  renderQuestions();
+  renderGroups();
+}
 
-<input id="questionText" placeholder="Type your question" />
+// SAVE DATA
+async function saveData() {
+  await fetch(PANTRY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
 
-<select id="questionType">
-  <option value="text">Text answer</option>
-  <option value="choice">Multiple choice</option>
-  <option value="both">Multiple choice + text</option>
-</select>
+// QUESTIONS
+function saveQuestion() {
+  const text = document.getElementById("questionText").value;
+  const type = document.getElementById("questionType").value;
+  const options = document.getElementById("optionsInput").value
+    .split(",")
+    .map(o => o.trim())
+    .filter(o => o);
 
-<input id="optionsInput" placeholder="Options (comma separated)" />
+  const index = document.getElementById("editIndex").value;
 
-<button onclick="saveQuestion()">Save Question</button>
-<input type="hidden" id="editIndex" />
+  const question = { text, type, options };
 
-<hr>
+  if (index === "") {
+    data.questions.push(question);
+  } else {
+    data.questions[index] = question;
+  }
 
-<!-- QUESTIONS LIST -->
-<h2>Questions</h2>
-<ul id="questionsList"></ul>
+  document.getElementById("questionText").value = "";
+  document.getElementById("optionsInput").value = "";
+  document.getElementById("editIndex").value = "";
 
-<hr>
+  saveData();
+  renderQuestions();
+}
 
-<!-- GROUPS -->
-<h2>Driver Groups</h2>
-<ul id="groupsList"></ul>
+function editQuestion(i) {
+  const q = data.questions[i];
+  document.getElementById("questionText").value = q.text;
+  document.getElementById("questionType").value = q.type;
+  document.getElementById("optionsInput").value = q.options.join(", ");
+  document.getElementById("editIndex").value = i;
+}
 
-<hr>
+function deleteQuestion(i) {
+  if (!confirm("Delete this question?")) return;
+  data.questions.splice(i, 1);
+  saveData();
+  renderQuestions();
+}
 
-<!-- BROADCAST -->
-<h2>Send Message to All Groups</h2>
+function renderQuestions() {
+  const list = document.getElementById("questionsList");
+  list.innerHTML = "";
 
-<textarea id="broadcastText" placeholder="Type message here"></textarea>
-<br>
-<button onclick="sendBroadcast()">Send to All Enabled Groups</button>
+  data.questions.forEach((q, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${q.text} (${q.type})
+      <button onclick="editQuestion(${i})">Edit</button>
+      <button onclick="deleteQuestion(${i})">Delete</button>
+    `;
+    list.appendChild(li);
+  });
+}
 
-<script src="script.js"></script>
-</body>
-</html>
+// GROUPS
+function renderGroups() {
+  const list = document.getElementById("groupsList");
+  list.innerHTML = "";
+
+  data.groups.forEach((g, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${g.name} (${g.enabled ? "Enabled" : "Disabled"})
+      <button onclick="toggleGroup(${i})">Toggle</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function toggleGroup(i) {
+  data.groups[i].enabled = !data.groups[i].enabled;
+  saveData();
+  renderGroups();
+}
+
+// BROADCAST
+async function sendBroadcast() {
+  const text = document.getElementById("broadcastText").value;
+  if (!text) return alert("Message is empty");
+
+  await fetch(PANTRY_URL + "/broadcast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+
+  alert("Broadcast saved. Bot will send it.");
+}
+
+loadData();
