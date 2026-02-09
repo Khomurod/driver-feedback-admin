@@ -1,3 +1,6 @@
+bot.on("message", (ctx) => {
+  console.log("CHAT ID:", ctx.chat.id);
+});
 const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6";
 const QUESTIONS_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/questions`;
 
