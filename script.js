@@ -1,4 +1,4 @@
-const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6";
+const PANTRY_ID = "PASTE_YOUR_PANTRY_ID_HERE";
 const QUESTIONS_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/questions`;
 
 async function loadQuestions() {
