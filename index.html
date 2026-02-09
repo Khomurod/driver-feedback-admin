@@ -1,119 +1,61 @@
-const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/YOUR_PANTRY_ID/basket/admin";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Feedback Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-let data = {
-  questions: [],
-  groups: []
-};
+    <div class="container">
+        <h1>🚚 Driver Feedback Admin</h1>
 
-// LOAD DATA
-async function loadData() {
-  const res = await fetch(PANTRY_URL);
-  if (res.ok) {
-    data = await res.json();
-  }
-  renderQuestions();
-  renderGroups();
-}
+        <div class="card">
+            <h2>1. Manage Questions</h2>
+            
+            <div class="form-group">
+                <label>Question Text:</label>
+                <input type="text" id="questionText" placeholder="E.g., How was your shift?">
+            </div>
 
-// SAVE DATA
-async function saveData() {
-  await fetch(PANTRY_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-}
+            <div class="form-group">
+                <label>Type:</label>
+                <select id="questionType">
+                    <option value="text">Free Text</option>
+                    <option value="choice">Multiple Choice</option>
+                </select>
+            </div>
 
-// QUESTIONS
-function saveQuestion() {
-  const text = document.getElementById("questionText").value;
-  const type = document.getElementById("questionType").value;
-  const options = document.getElementById("optionsInput").value
-    .split(",")
-    .map(o => o.trim())
-    .filter(o => o);
+            <div class="form-group">
+                <label>Options (comma separated, for 'Multiple Choice'):</label>
+                <input type="text" id="optionsInput" placeholder="E.g., Good, Bad, Okay">
+            </div>
 
-  const index = document.getElementById("editIndex").value;
+            <input type="hidden" id="editIndex">
 
-  const question = { text, type, options };
+            <button onclick="saveQuestion()" class="btn-primary">Save Question</button>
+            <button onclick="clearForm()" class="btn-secondary">Cancel</button>
+        </div>
 
-  if (index === "") {
-    data.questions.push(question);
-  } else {
-    data.questions[index] = question;
-  }
+        <div class="card">
+            <h3>Current Questions</h3>
+            <ul id="questionsList"></ul>
+        </div>
 
-  document.getElementById("questionText").value = "";
-  document.getElementById("optionsInput").value = "";
-  document.getElementById("editIndex").value = "";
+        <div class="card">
+            <h2>2. Driver Groups</h2>
+            <p class="subtitle">Groups are added here automatically when the bot is added to a Telegram group.</p>
+            <ul id="groupsList"></ul>
+        </div>
 
-  saveData();
-  renderQuestions();
-}
+        <div class="card">
+            <h2>3. Send Broadcast</h2>
+            <textarea id="broadcastText" placeholder="Type a message to send to all enabled groups..."></textarea>
+            <button onclick="sendBroadcast()" class="btn-warning">📢 Send Announcement</button>
+        </div>
+    </div>
 
-function editQuestion(i) {
-  const q = data.questions[i];
-  document.getElementById("questionText").value = q.text;
-  document.getElementById("questionType").value = q.type;
-  document.getElementById("optionsInput").value = q.options.join(", ");
-  document.getElementById("editIndex").value = i;
-}
-
-function deleteQuestion(i) {
-  if (!confirm("Delete this question?")) return;
-  data.questions.splice(i, 1);
-  saveData();
-  renderQuestions();
-}
-
-function renderQuestions() {
-  const list = document.getElementById("questionsList");
-  list.innerHTML = "";
-
-  data.questions.forEach((q, i) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${q.text} (${q.type})
-      <button onclick="editQuestion(${i})">Edit</button>
-      <button onclick="deleteQuestion(${i})">Delete</button>
-    `;
-    list.appendChild(li);
-  });
-}
-
-// GROUPS
-function renderGroups() {
-  const list = document.getElementById("groupsList");
-  list.innerHTML = "";
-
-  data.groups.forEach((g, i) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${g.name} (${g.enabled ? "Enabled" : "Disabled"})
-      <button onclick="toggleGroup(${i})">Toggle</button>
-    `;
-    list.appendChild(li);
-  });
-}
-
-function toggleGroup(i) {
-  data.groups[i].enabled = !data.groups[i].enabled;
-  saveData();
-  renderGroups();
-}
-
-// BROADCAST
-async function sendBroadcast() {
-  const text = document.getElementById("broadcastText").value;
-  if (!text) return alert("Message is empty");
-
-  await fetch(PANTRY_URL + "/broadcast", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
-
-  alert("Broadcast saved. Bot will send it.");
-}
-
-loadData();
+    <script src="script.js"></script>
+</body>
+</html>

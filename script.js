@@ -1,4 +1,6 @@
-const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/YOUR_PANTRY_ID/basket/questions";
+// REPLACE 'YOUR_PANTRY_ID' WITH YOUR ACTUAL ID BELOW
+const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6"; 
+const PANTRY_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/driver_data`;
 
 let data = {
   questions: [],
@@ -7,9 +9,19 @@ let data = {
 
 // LOAD DATA
 async function loadData() {
-  const res = await fetch(PANTRY_URL);
-  if (res.ok) {
-    data = await res.json();
+  console.log("Fetching data from:", PANTRY_URL);
+  try {
+    const res = await fetch(PANTRY_URL);
+    if (res.ok) {
+      data = await res.json();
+      // Ensure structure exists if pantry was empty
+      if (!data.questions) data.questions = [];
+      if (!data.groups) data.groups = [];
+    } else {
+        console.log("No existing data found, starting fresh.");
+    }
+  } catch (e) {
+      console.error("Error loading data:", e);
   }
   renderQuestions();
   renderGroups();
@@ -17,11 +29,17 @@ async function loadData() {
 
 // SAVE DATA
 async function saveData() {
+  const saveBtn = document.querySelector('button[onclick="saveQuestion()"]');
+  const originalText = saveBtn.innerText;
+  saveBtn.innerText = "Saving...";
+  
   await fetch(PANTRY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
+  
+  saveBtn.innerText = originalText;
 }
 
 // QUESTIONS
@@ -35,6 +53,8 @@ function saveQuestion() {
 
   const index = document.getElementById("editIndex").value;
 
+  if (!text) return alert("Please enter question text");
+
   const question = { text, type, options };
 
   if (index === "") {
@@ -43,10 +63,7 @@ function saveQuestion() {
     data.questions[index] = question;
   }
 
-  document.getElementById("questionText").value = "";
-  document.getElementById("optionsInput").value = "";
-  document.getElementById("editIndex").value = "";
-
+  clearForm();
   saveData();
   renderQuestions();
 }
@@ -54,8 +71,8 @@ function saveQuestion() {
 function editQuestion(i) {
   const q = data.questions[i];
   document.getElementById("questionText").value = q.text;
-  document.getElementById("questionType").value = q.type;
-  document.getElementById("optionsInput").value = q.options.join(", ");
+  document.getElementById("questionType").value = q.type || "text";
+  document.getElementById("optionsInput").value = q.options ? q.options.join(", ") : "";
   document.getElementById("editIndex").value = i;
 }
 
@@ -66,16 +83,30 @@ function deleteQuestion(i) {
   renderQuestions();
 }
 
+function clearForm() {
+    document.getElementById("questionText").value = "";
+    document.getElementById("questionType").value = "text";
+    document.getElementById("optionsInput").value = "";
+    document.getElementById("editIndex").value = "";
+}
+
 function renderQuestions() {
   const list = document.getElementById("questionsList");
   list.innerHTML = "";
 
   data.questions.forEach((q, i) => {
     const li = document.createElement("li");
+    li.className = "list-item";
     li.innerHTML = `
-      ${q.text} (${q.type})
-      <button onclick="editQuestion(${i})">Edit</button>
-      <button onclick="deleteQuestion(${i})">Delete</button>
+      <div>
+          <strong>${i + 1}. ${q.text}</strong> 
+          <span class="badge">${q.type}</span>
+          ${q.type === 'choice' ? `<br><small>Options: ${q.options.join(', ')}</small>` : ''}
+      </div>
+      <div>
+          <button onclick="editQuestion(${i})">Edit</button>
+          <button onclick="deleteQuestion(${i})" style="background:#ff4444; color:white;">Delete</button>
+      </div>
     `;
     list.appendChild(li);
   });
@@ -86,11 +117,19 @@ function renderGroups() {
   const list = document.getElementById("groupsList");
   list.innerHTML = "";
 
+  if (data.groups.length === 0) {
+      list.innerHTML = "<li>No groups registered yet. Add the bot to a Telegram group to see it here.</li>";
+      return;
+  }
+
   data.groups.forEach((g, i) => {
     const li = document.createElement("li");
+    li.className = "list-item";
     li.innerHTML = `
-      ${g.name} (${g.enabled ? "Enabled" : "Disabled"})
-      <button onclick="toggleGroup(${i})">Toggle</button>
+      <span>${g.name || "Unknown Group"} (ID: ${g.id})</span>
+      <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">
+        ${g.enabled ? "✅ Enabled" : "❌ Disabled"}
+      </button>
     `;
     list.appendChild(li);
   });
@@ -106,14 +145,17 @@ function toggleGroup(i) {
 async function sendBroadcast() {
   const text = document.getElementById("broadcastText").value;
   if (!text) return alert("Message is empty");
+  
+  // Save the broadcast message to a separate 'mailbox' in the data
+  // The bot will check this 'mailbox' periodically or we can trigger it differently.
+  // For now, let's just save it to the main object so the bot sees it next fetch.
+  data.broadcast_queue = text; 
 
-  await fetch(PANTRY_URL + "/broadcast", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
-
-  alert("Broadcast saved. Bot will send it.");
+  await saveData();
+  
+  alert("Broadcast queued! The bot will send it shortly.");
+  document.getElementById("broadcastText").value = "";
 }
 
+// Initialize
 loadData();
