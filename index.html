@@ -9,8 +9,17 @@
   <h1>Driver Feedback Admin Panel</h1>
 
   <h2>Add Question</h2>
-  <input id="question" placeholder="Type your question">
-  <button onclick="addQuestion()">Add</button>
+<input id="question" placeholder="Type your question">
+
+<select id="type">
+  <option value="text">Text answer</option>
+  <option value="choice">Multiple choice</option>
+  <option value="both">Multiple choice + text</option>
+</select>
+
+<input id="options" placeholder="Choices (comma separated)">
+
+<button onclick="addQuestion()">Add</button>
 
   <h2>Questions</h2>
   <ul id="questions"></ul>
