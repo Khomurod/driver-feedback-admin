@@ -1,23 +1,21 @@
 body {
-  font-family: Arial;
-  padding: 20px;
+  font-family: Arial, sans-serif;
+  margin: 40px;
 }
 
-.box {
-  margin-bottom: 20px;
-}
-
-input, select {
+input, select, textarea {
+  width: 300px;
+  padding: 8px;
+  margin: 5px 0;
   display: block;
-  margin-bottom: 10px;
-  padding: 6px;
-  width: 320px;
 }
 
 button {
-  padding: 6px 14px;
+  padding: 8px 14px;
+  margin-top: 10px;
+  cursor: pointer;
 }
 
 li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }

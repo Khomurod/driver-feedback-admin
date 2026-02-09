@@ -1,62 +1,119 @@
-const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6";
-const QUESTIONS_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/questions`;
+const PANTRY_URL = "https://getpantry.cloud/apiv1/pantry/42f7bc17-4c7d-4314-9a0d-19f876d39db6/basket/admin";
 
-async function loadQuestions() {
-  try {
-    const res = await fetch(QUESTIONS_URL);
-    const data = await res.json();
-    render(data.questions || []);
-  } catch {
-    render([]);
+let data = {
+  questions: [],
+  groups: []
+};
+
+// LOAD DATA
+async function loadData() {
+  const res = await fetch(PANTRY_URL);
+  if (res.ok) {
+    data = await res.json();
   }
+  renderQuestions();
+  renderGroups();
 }
 
-async function addQuestion() {
-  const text = document.getElementById("question").value.trim();
-  const type = document.getElementById("type").value;
-  const rawOptions = document.getElementById("options").value;
+// SAVE DATA
+async function saveData() {
+  await fetch(PANTRY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
 
-  if (!text) return alert("Question text required");
+// QUESTIONS
+function saveQuestion() {
+  const text = document.getElementById("questionText").value;
+  const type = document.getElementById("questionType").value;
+  const options = document.getElementById("optionsInput").value
+    .split(",")
+    .map(o => o.trim())
+    .filter(o => o);
 
-  const options =
-    type === "text"
-      ? []
-      : rawOptions.split(",").map(o => o.trim()).filter(Boolean);
+  const index = document.getElementById("editIndex").value;
 
   const question = { text, type, options };
 
-  let data = {};
-  try {
-    const res = await fetch(QUESTIONS_URL);
-    data = await res.json();
-  } catch {}
+  if (index === "") {
+    data.questions.push(question);
+  } else {
+    data.questions[index] = question;
+  }
 
-  const questions = data.questions || [];
-  questions.push(question);
+  document.getElementById("questionText").value = "";
+  document.getElementById("optionsInput").value = "";
+  document.getElementById("editIndex").value = "";
 
-  await fetch(QUESTIONS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ questions })
-  });
-
-  document.getElementById("question").value = "";
-  document.getElementById("options").value = "";
-
-  loadQuestions();
+  saveData();
+  renderQuestions();
 }
 
-function render(questions) {
-  const list = document.getElementById("questions");
+function editQuestion(i) {
+  const q = data.questions[i];
+  document.getElementById("questionText").value = q.text;
+  document.getElementById("questionType").value = q.type;
+  document.getElementById("optionsInput").value = q.options.join(", ");
+  document.getElementById("editIndex").value = i;
+}
+
+function deleteQuestion(i) {
+  if (!confirm("Delete this question?")) return;
+  data.questions.splice(i, 1);
+  saveData();
+  renderQuestions();
+}
+
+function renderQuestions() {
+  const list = document.getElementById("questionsList");
   list.innerHTML = "";
 
-  questions.forEach(q => {
+  data.questions.forEach((q, i) => {
     const li = document.createElement("li");
-    let text = `${q.text} (${q.type})`;
-    if (q.options.length) text += ` → [${q.options.join(", ")}]`;
-    li.textContent = text;
+    li.innerHTML = `
+      ${q.text} (${q.type})
+      <button onclick="editQuestion(${i})">Edit</button>
+      <button onclick="deleteQuestion(${i})">Delete</button>
+    `;
     list.appendChild(li);
   });
 }
 
-loadQuestions();
+// GROUPS
+function renderGroups() {
+  const list = document.getElementById("groupsList");
+  list.innerHTML = "";
+
+  data.groups.forEach((g, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${g.name} (${g.enabled ? "Enabled" : "Disabled"})
+      <button onclick="toggleGroup(${i})">Toggle</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function toggleGroup(i) {
+  data.groups[i].enabled = !data.groups[i].enabled;
+  saveData();
+  renderGroups();
+}
+
+// BROADCAST
+async function sendBroadcast() {
+  const text = document.getElementById("broadcastText").value;
+  if (!text) return alert("Message is empty");
+
+  await fetch(PANTRY_URL + "/broadcast", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+
+  alert("Broadcast saved. Bot will send it.");
+}
+
+loadData();

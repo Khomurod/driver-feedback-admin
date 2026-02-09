@@ -1,29 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Driver Feedback Admin</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Driver Feedback Admin Panel</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<h1>Driver Feedback – Admin Panel</h1>
+<h1>Driver Feedback Admin Panel</h1>
 
-<div class="box">
-  <input id="question" placeholder="Question text">
+<!-- ADD QUESTION -->
+<h2>Add / Edit Question</h2>
 
-  <select id="type">
-    <option value="text">Text answer</option>
-    <option value="choice">Multiple choice</option>
-    <option value="both">Multiple choice + text</option>
-  </select>
+<input id="questionText" placeholder="Type your question" />
 
-  <input id="options" placeholder="Choices (comma separated)">
-  <button onclick="addQuestion()">Add Question</button>
-</div>
+<select id="questionType">
+  <option value="text">Text answer</option>
+  <option value="choice">Multiple choice</option>
+  <option value="both">Multiple choice + text</option>
+</select>
 
-<h2>Saved Questions</h2>
-<ul id="questions"></ul>
+<input id="optionsInput" placeholder="Options (comma separated)" />
+
+<button onclick="saveQuestion()">Save Question</button>
+<input type="hidden" id="editIndex" />
+
+<hr>
+
+<!-- QUESTIONS LIST -->
+<h2>Questions</h2>
+<ul id="questionsList"></ul>
+
+<hr>
+
+<!-- GROUPS -->
+<h2>Driver Groups</h2>
+<ul id="groupsList"></ul>
+
+<hr>
+
+<!-- BROADCAST -->
+<h2>Send Message to All Groups</h2>
+
+<textarea id="broadcastText" placeholder="Type message here"></textarea>
+<br>
+<button onclick="sendBroadcast()">Send to All Enabled Groups</button>
 
 <script src="script.js"></script>
 </body>
