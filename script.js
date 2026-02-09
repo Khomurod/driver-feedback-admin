@@ -14,7 +14,6 @@ async function loadData() {
     const res = await fetch(PANTRY_URL);
     if (res.ok) {
       data = await res.json();
-      // Ensure structure exists if pantry was empty
       if (!data.questions) data.questions = [];
       if (!data.groups) data.groups = [];
     } else {
@@ -30,8 +29,8 @@ async function loadData() {
 // SAVE DATA
 async function saveData() {
   const saveBtn = document.querySelector('button[onclick="saveQuestion()"]');
-  const originalText = saveBtn.innerText;
-  saveBtn.innerText = "Saving...";
+  const originalText = saveBtn ? saveBtn.innerText : "Save";
+  if (saveBtn) saveBtn.innerText = "Saving...";
   
   await fetch(PANTRY_URL, {
     method: "POST",
@@ -39,7 +38,7 @@ async function saveData() {
     body: JSON.stringify(data)
   });
   
-  saveBtn.innerText = originalText;
+  if (saveBtn) saveBtn.innerText = originalText;
 }
 
 // QUESTIONS
@@ -125,11 +124,25 @@ function renderGroups() {
   data.groups.forEach((g, i) => {
     const li = document.createElement("li");
     li.className = "list-item";
+    
+    // Determine Role
+    const isAdmin = g.is_admin === true;
+    const roleColor = isAdmin ? "#8e44ad" : "#27ae60"; // Purple for Admin, Green for Driver
+    const roleText = isAdmin ? "👮 Admin Group" : "🚚 Driver Group";
+
     li.innerHTML = `
-      <span>${g.name || "Unknown Group"} (ID: ${g.id})</span>
-      <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">
-        ${g.enabled ? "✅ Enabled" : "❌ Disabled"}
-      </button>
+      <div>
+        <strong>${g.name || "Unknown Group"}</strong> <br>
+        <small>ID: ${g.id}</small>
+      </div>
+      <div>
+        <button onclick="toggleRole(${i})" style="background:${roleColor}; color:white;">
+            ${roleText}
+        </button>
+        <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">
+            ${g.enabled ? "✅ On" : "❌ Off"}
+        </button>
+      </div>
     `;
     list.appendChild(li);
   });
@@ -141,19 +154,23 @@ function toggleGroup(i) {
   renderGroups();
 }
 
+function toggleRole(i) {
+    // Toggle between true and false
+    data.groups[i].is_admin = !data.groups[i].is_admin;
+    saveData();
+    renderGroups();
+}
+
 // BROADCAST
 async function sendBroadcast() {
   const text = document.getElementById("broadcastText").value;
   if (!text) return alert("Message is empty");
   
-  // Save the broadcast message to a separate 'mailbox' in the data
-  // The bot will check this 'mailbox' periodically or we can trigger it differently.
-  // For now, let's just save it to the main object so the bot sees it next fetch.
   data.broadcast_queue = text; 
 
   await saveData();
   
-  alert("Broadcast queued! The bot will send it shortly.");
+  alert("Broadcast queued! Sending to all DRIVER groups.");
   document.getElementById("broadcastText").value = "";
 }
 
