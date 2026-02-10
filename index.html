@@ -54,6 +54,29 @@
             <textarea id="broadcastText" placeholder="Type a message to send to all enabled groups..."></textarea>
             <button onclick="sendBroadcast()" class="btn-warning">📢 Send Announcement</button>
         </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>4. Feedback History</h2>
+                <button onclick="downloadCSV()" class="btn-primary" style="background-color:#27ae60;">📥 Download Excel</button>
+            </div>
+            <p class="subtitle">Recent reports submitted by drivers.</p>
+            
+            <div style="overflow-x:auto;">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Driver</th>
+                            <th>Feedback Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyList">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
