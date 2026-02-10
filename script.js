@@ -118,19 +118,22 @@ function renderGroups() {
     // Determine Role
     const isAdmin = g.is_admin === true;
     const roleColor = isAdmin ? "#8e44ad" : "#27ae60"; 
-    const roleText = isAdmin ? "👮 Admin Group" : "🚚 Driver Group";
+    const roleText = isAdmin ? "👮 Admin" : "🚚 Driver";
 
     li.innerHTML = `
       <div>
         <strong>${g.name || "Unknown Group"}</strong> <br>
         <small>ID: ${g.id}</small>
       </div>
-      <div>
+      <div style="text-align:right;">
         <button onclick="toggleRole(${i})" style="background:${roleColor}; color:white;">
             ${roleText}
         </button>
         <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">
           ${g.enabled ? "✅ On" : "❌ Off"}
+        </button>
+        <button onclick="deleteGroup(${i})" style="background:#c0392b; color:white;">
+          🗑 Delete
         </button>
       </div>`;
     list.appendChild(li);
@@ -145,6 +148,13 @@ function toggleGroup(i) {
 
 function toggleRole(i) {
     data.groups[i].is_admin = !data.groups[i].is_admin;
+    saveData();
+    renderGroups();
+}
+
+function deleteGroup(i) {
+    if (!confirm("Are you sure you want to delete this group? It will be removed from the list.")) return;
+    data.groups.splice(i, 1);
     saveData();
     renderGroups();
 }
