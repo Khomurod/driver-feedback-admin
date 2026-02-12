@@ -5,74 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Feedback Admin</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="container">
-        <h1>🚚 Driver Feedback Admin</h1>
-
-        <div class="card">
-            <h2>1. Manage Questions</h2>
-            
-            <div class="form-group">
-                <label>Question Text:</label>
-                <input type="text" id="questionText" placeholder="E.g., How was your shift?">
-            </div>
-
-            <div class="form-group">
-                <label>Type:</label>
-                <select id="questionType">
-                    <option value="text">Free Text</option>
-                    <option value="choice">Multiple Choice</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Options (comma separated, for 'Multiple Choice'):</label>
-                <input type="text" id="optionsInput" placeholder="E.g., Good, Bad, Okay">
-            </div>
-
-            <input type="hidden" id="editIndex">
-
-            <button onclick="saveQuestion()" class="btn-primary">Save Question</button>
-            <button onclick="clearForm()" class="btn-secondary">Cancel</button>
+    <header class="top-bar">
+        <div class="brand">
+            <h1>🚚 Feedback Admin</h1>
+            <span id="statusLabel" class="status-badge">Connecting...</span>
         </div>
+        <button onclick="downloadBackup()" class="btn-outline">⬇ Backup DB</button>
+    </header>
+
+    <div class="container">
 
         <div class="card">
-            <h3>Current Questions</h3>
-            <ul id="questionsList"></ul>
+            <h2>1. Setup Questions</h2>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-grow">
+                        <label>Question</label>
+                        <input type="text" id="questionText" placeholder="e.g. How was traffic?">
+                    </div>
+                    <div class="col-fixed">
+                        <label>Type</label>
+                        <select id="questionType">
+                            <option value="text">Text Input</option>
+                            <option value="choice">Multiple Choice</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="col-grow">
+                        <label>Options (for Multiple Choice)</label>
+                        <input type="text" id="optionsInput" placeholder="Good, Bad, Okay">
+                    </div>
+                </div>
+
+                <input type="hidden" id="editIndex">
+
+                <div class="action-bar">
+                    <button id="btnSaveQuestion" onclick="saveQuestion()" class="btn-primary">Save Question</button>
+                    <button onclick="clearForm()" class="btn-ghost">Clear</button>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h3>Active Questions</h3>
+            <ul id="questionsList" class="clean-list"></ul>
         </div>
 
         <div class="card">
             <h2>2. Driver Groups</h2>
-            <p class="subtitle">Groups are added here automatically when the bot is added to a Telegram group.</p>
-            <ul id="groupsList"></ul>
+            <p class="subtitle">Groups appear here automatically when the bot is added.</p>
+            <ul id="groupsList" class="clean-list"></ul>
         </div>
 
         <div class="card">
-            <h2>3. Send Broadcast</h2>
-            <textarea id="broadcastText" placeholder="Type a message to send to all enabled groups..."></textarea>
-            <button onclick="sendBroadcast()" class="btn-warning">📢 Send Announcement</button>
-        </div>
-
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>4. Feedback History</h2>
-                <button onclick="downloadCSV()" class="btn-primary" style="background-color:#27ae60;">📥 Download Excel</button>
+            <h2>3. Announcement</h2>
+            <div class="card-body">
+                <textarea id="broadcastText" rows="3" placeholder="Message to all drivers..."></textarea>
+                <button id="btnBroadcast" onclick="sendBroadcast()" class="btn-warning">📢 Queue Broadcast</button>
             </div>
-            <p class="subtitle">Recent reports submitted by drivers.</p>
+        </div>
+
+        <div class="card">
+            <div class="header-split">
+                <h2>4. Recent Feedback</h2>
+                <button onclick="downloadCSV()" class="btn-success">📥 Download CSV</button>
+            </div>
             
-            <div style="overflow-x:auto;">
+            <div class="table-wrapper">
                 <table id="historyTable">
                     <thead>
                         <tr>
                             <th>Date</th>
                             <th>Driver</th>
-                            <th>Feedback Summary</th>
+                            <th>Responses</th>
                         </tr>
                     </thead>
-                    <tbody id="historyList">
-                        </tbody>
+                    <tbody id="historyList"></tbody>
                 </table>
             </div>
         </div>
