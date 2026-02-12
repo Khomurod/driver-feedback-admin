@@ -35,24 +35,19 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="col-grow">
                         <label>Options (for Multiple Choice)</label>
                         <input type="text" id="optionsInput" placeholder="Good, Bad, Okay">
                     </div>
                 </div>
-
                 <input type="hidden" id="editIndex">
-
                 <div class="action-bar">
                     <button id="btnSaveQuestion" onclick="saveQuestion()" class="btn-primary">Save Question</button>
                     <button onclick="clearForm()" class="btn-ghost">Clear</button>
                 </div>
             </div>
-
             <div class="divider"></div>
-
             <h3>Active Questions</h3>
             <ul id="questionsList" class="clean-list"></ul>
         </div>
@@ -64,11 +59,30 @@
         </div>
 
         <div class="card">
-            <h2>3. Announcement</h2>
-            <div class="card-body">
-                <textarea id="broadcastText" rows="3" placeholder="Message to all drivers..."></textarea>
-                <button id="btnBroadcast" onclick="sendBroadcast()" class="btn-warning">📢 Queue Broadcast</button>
+            <h2>3. Announcements</h2>
+            
+            <div class="card-body" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <label>📢 Send Immediately</label>
+                <div class="form-row">
+                    <input type="text" id="broadcastText" placeholder="Message to all drivers..." style="flex-grow:1;">
+                    <button id="btnBroadcast" onclick="sendBroadcast()" class="btn-warning">Send Now</button>
+                </div>
             </div>
+
+            <br>
+
+            <div class="card-body" style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+                <label>jg Schedule for Later</label>
+                <div class="form-row">
+                    <input type="text" id="schedText" placeholder="Message content..." style="flex-grow:1;">
+                    <input type="datetime-local" id="schedTime" style="width: 200px;">
+                    <button id="btnSchedule" onclick="scheduleBroadcast()" class="btn-primary">Schedule</button>
+                </div>
+                <small>Server checks every minute. (Use local time, bot will adjust)</small>
+            </div>
+
+            <h3>Upcoming Queue</h3>
+            <ul id="scheduleList" class="clean-list"></ul>
         </div>
 
         <div class="card">
@@ -76,7 +90,6 @@
                 <h2>4. Recent Feedback</h2>
                 <button onclick="downloadCSV()" class="btn-success">📥 Download CSV</button>
             </div>
-            
             <div class="table-wrapper">
                 <table id="historyTable">
                     <thead>
@@ -92,7 +105,6 @@
         </div>
 
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
