@@ -61,9 +61,8 @@ async function saveData(loadingBtn = null) {
             body: JSON.stringify(payload)
         });
 
-        localData.groups = mergedGroups;
-        localData.broadcast_queue = null;
-        renderAll();
+        // THE FIX: Sync back with the server so our browser forgets sent messages!
+        await loadData();
 
     } catch (e) { 
         alert("Save failed! Make sure your bot is running."); 
@@ -186,7 +185,6 @@ function saveWeeklySchedule() {
     saveData(document.getElementById("btnSaveWeekly"));
 }
 
-// NEW: Function to instantly trigger the survey
 async function sendSurveyNow() {
     if (!confirm("Are you sure you want to send the survey to all drivers right now?")) return;
     
@@ -195,7 +193,7 @@ async function sendSurveyNow() {
     const newItem = {
         id: Date.now(),
         text: surveyText,
-        time: new Date().toISOString(), // Targets 'right now'
+        time: new Date().toISOString(), 
         includeSurvey: true
     };
     
