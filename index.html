@@ -75,7 +75,9 @@
                     </select>
                     <span style="font-weight: 500; margin-right: 10px;">at Hour:</span>
                     <input type="number" id="weeklyHour" min="0" max="23" style="width: 80px; margin-right: 10px;" placeholder="0-23">
-                    <button id="btnSaveWeekly" onclick="saveWeeklySchedule()" class="btn-success">Save Schedule</button>
+                    
+                    <button id="btnSaveWeekly" onclick="saveWeeklySchedule()" class="btn-success" style="margin-right: 10px;">Save Schedule</button>
+                    <button id="btnSendSurveyNow" onclick="sendSurveyNow()" class="btn-warning">Send Now</button>
                 </div>
                 <small>Select the day and hour (0-23 server time) the bot will automatically send the weekly survey.</small>
             </div>
@@ -99,7 +101,6 @@
                     <input type="checkbox" id="schedIncludeSurvey"> 
                     <label for="schedIncludeSurvey" style="display:inline; font-weight:normal; cursor:pointer;">Attach "Take the Survey" button to this message</label>
                 </div>
-                <small style="display:block; margin-top:5px;">Server checks every minute. (Use local time, bot will adjust)</small>
             </div>
 
             <h3 style="margin-top: 20px;">Upcoming Custom Queue</h3>
