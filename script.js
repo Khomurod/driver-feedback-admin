@@ -282,3 +282,48 @@ function renderHistory() {
         list.appendChild(row);
     });
 }
+
+function downloadCSV() {
+    if (!localData.history || localData.history.length === 0) {
+        return alert("No feedback data to download.");
+    }
+
+    let csvContent = "Date,Driver,Question,Answer\n";
+    
+    localData.history.forEach(h => {
+        const dateStr = new Date(h.date).toLocaleString().replace(/,/g, '');
+        const userStr = h.user.replace(/,/g, '');
+        
+        h.answers.forEach(a => {
+            const qStr = a.question.replace(/,/g, '');
+            const aStr = a.answer.replace(/,/g, '');
+            csvContent += `${dateStr},${userStr},${qStr},${aStr}\n`;
+        });
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "driver_feedback.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function downloadBackup() {
+    if (!localData) return alert("No data to backup.");
+    
+    const dataStr = JSON.stringify(localData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `database_backup_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Start up
+loadData();
