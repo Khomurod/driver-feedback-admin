@@ -1,8 +1,8 @@
 // --- 1. CONFIGURATION ---
-// Notice the API URL is now pointing to your live Koyeb server!
 const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
-let localData = { questions: [], groups: [], history: [], scheduled_queue: [] };
+// NEW: added weekly_schedule default
+let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16 } };
 
 // --- 2. DATA LOADING & SAVING ---
 async function loadData() {
@@ -16,6 +16,11 @@ async function loadData() {
             localData.groups = data.groups || [];
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
+            
+            // NEW: Load the saved weekly schedule and update the UI
+            localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16 };
+            document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
+            document.getElementById("weeklyHour").value = localData.weekly_schedule.hour;
             
             renderAll();
             if (statusLabel) statusLabel.innerText = "✅ Connected to Bot";
@@ -44,11 +49,13 @@ async function saveData(loadingBtn = null) {
             if (!mergedGroups.find(lg => lg.id === sg.id)) mergedGroups.push(sg);
         });
 
+        // NEW: include weekly_schedule in payload
         const payload = {
             questions: localData.questions,
             groups: mergedGroups,
             broadcast_queue: localData.broadcast_queue || serverData.broadcast_queue,
             scheduled_queue: localData.scheduled_queue,
+            weekly_schedule: localData.weekly_schedule
         };
 
         await fetch(API_URL, {
@@ -128,7 +135,7 @@ function renderQuestions() {
     });
 }
 
-// --- 4. GROUPS (Now with the Admin Toggle!) ---
+// --- 4. GROUPS ---
 function renderGroups() {
     const list = document.getElementById("groupsList");
     list.innerHTML = "";
@@ -136,7 +143,6 @@ function renderGroups() {
         const li = document.createElement("li");
         li.className = "list-item";
         
-        // Dynamic styles for the role button
         const roleText = g.is_admin ? '👑 Admin' : '🚚 Driver';
         const roleBg = g.is_admin ? '#8e44ad' : '#27ae60';
 
@@ -171,6 +177,19 @@ function deleteGroup(i) {
 }
 
 // --- 5. SCHEDULE & BROADCAST ---
+// NEW: Function to save the dynamic weekly schedule
+function saveWeeklySchedule() {
+    const day = parseInt(document.getElementById("weeklyDay").value);
+    const hour = parseInt(document.getElementById("weeklyHour").value);
+    
+    if (isNaN(day) || isNaN(hour) || hour < 0 || hour > 23) {
+        return alert("Please enter a valid hour between 0 and 23.");
+    }
+    
+    localData.weekly_schedule = { day: day, hour: hour };
+    saveData(document.getElementById("btnSaveWeekly"));
+}
+
 async function sendBroadcast() {
     const text = document.getElementById("broadcastText").value;
     if (!text) return alert("Empty message");
@@ -183,13 +202,15 @@ async function sendBroadcast() {
 async function scheduleBroadcast() {
     const text = document.getElementById("schedText").value;
     const timeVal = document.getElementById("schedTime").value;
+    const includeSurvey = document.getElementById("schedIncludeSurvey").checked; 
     
     if (!text || !timeVal) return alert("Enter text and time.");
     
     const newItem = {
         id: Date.now(),
         text: text,
-        time: new Date(timeVal).toISOString() 
+        time: new Date(timeVal).toISOString(),
+        includeSurvey: includeSurvey
     };
     
     if (!localData.scheduled_queue) localData.scheduled_queue = [];
@@ -199,22 +220,24 @@ async function scheduleBroadcast() {
     
     document.getElementById("schedText").value = "";
     document.getElementById("schedTime").value = "";
+    document.getElementById("schedIncludeSurvey").checked = false;
 }
 
 function renderSchedule() {
     const list = document.getElementById("scheduleList");
     list.innerHTML = "";
     if (!localData.scheduled_queue || localData.scheduled_queue.length === 0) {
-        list.innerHTML = "<li>No upcoming messages.</li>";
+        list.innerHTML = "<li>No upcoming custom messages.</li>";
         return;
     }
     
     localData.scheduled_queue.forEach((item, i) => {
         const date = new Date(item.time).toLocaleString();
+        const surveyTag = item.includeSurvey ? ` <span class="badge" style="background:#e3f2fd;color:#0d47a1;">+ Survey Btn</span>` : "";
         const li = document.createElement("li");
         li.className = "list-item";
         li.innerHTML = `
-            <div><strong>${date}</strong>: ${item.text}</div>
+            <div><strong>${date}</strong>: ${item.text}${surveyTag}</div>
             <button class="btn-sm btn-danger" onclick="deleteSchedule(${i})">Cancel</button>
         `;
         list.appendChild(li);
@@ -259,48 +282,3 @@ function renderHistory() {
         list.appendChild(row);
     });
 }
-
-function downloadCSV() {
-    if (!localData.history || localData.history.length === 0) {
-        return alert("No feedback data to download.");
-    }
-
-    let csvContent = "Date,Driver,Question,Answer\n";
-    
-    localData.history.forEach(h => {
-        const dateStr = new Date(h.date).toLocaleString().replace(/,/g, '');
-        const userStr = h.user.replace(/,/g, '');
-        
-        h.answers.forEach(a => {
-            const qStr = a.question.replace(/,/g, '');
-            const aStr = a.answer.replace(/,/g, '');
-            csvContent += `${dateStr},${userStr},${qStr},${aStr}\n`;
-        });
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "driver_feedback.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function downloadBackup() {
-    if (!localData) return alert("No data to backup.");
-    
-    const dataStr = JSON.stringify(localData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `database_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Start up
-loadData();
