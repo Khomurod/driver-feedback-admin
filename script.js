@@ -1,5 +1,4 @@
 // --- 1. CONFIGURATION ---
-// This points to your new secure local bot API instead of Pantry
 const API_URL = "http://localhost:8000/api/data";
 
 let localData = { questions: [], groups: [], history: [], scheduled_queue: [] };
@@ -35,11 +34,9 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
-        // Fetch the latest server data first to prevent overwriting new driver feedback
         const res = await fetch(API_URL);
         const serverData = res.ok ? await res.json() : {};
         
-        // Merge our local groups with any new ones the server found
         const serverGroups = serverData.groups || [];
         const mergedGroups = [...localData.groups];
         serverGroups.forEach(sg => {
@@ -53,7 +50,6 @@ async function saveData(loadingBtn = null) {
             scheduled_queue: localData.scheduled_queue,
         };
 
-        // Save safely back to our local API
         await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -61,7 +57,7 @@ async function saveData(loadingBtn = null) {
         });
 
         localData.groups = mergedGroups;
-        localData.broadcast_queue = null; // clear local
+        localData.broadcast_queue = null;
         renderAll();
 
     } catch (e) { 
@@ -131,24 +127,48 @@ function renderQuestions() {
     });
 }
 
-// --- 4. GROUPS ---
+// --- 4. GROUPS (Now with the Admin Toggle!) ---
 function renderGroups() {
     const list = document.getElementById("groupsList");
     list.innerHTML = "";
     localData.groups.forEach((g, i) => {
         const li = document.createElement("li");
         li.className = "list-item";
+        
+        // Dynamic styles for the role button
+        const roleText = g.is_admin ? '👑 Admin' : '🚚 Driver';
+        const roleBg = g.is_admin ? '#8e44ad' : '#27ae60';
+
         li.innerHTML = `
             <span>${g.name} <small>(${g.id})</small></span>
             <div>
+                <button onclick="toggleRole(${i})" style="font-size:12px; background:${roleBg}; color:white; border:none; padding:4px 8px; border-radius:4px; margin-right:5px; cursor:pointer;">
+                    ${roleText}
+                </button>
                 <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">${g.enabled ? 'ON' : 'OFF'}</button>
                 <button class="btn-sm btn-danger" onclick="deleteGroup(${i})">🗑</button>
             </div>`;
         list.appendChild(li);
     });
 }
-function toggleGroup(i) { localData.groups[i].enabled = !localData.groups[i].enabled; saveData(); }
-function deleteGroup(i) { if(confirm("Delete group?")) { localData.groups.splice(i, 1); saveData(); } }
+
+function toggleGroup(i) { 
+    localData.groups[i].enabled = !localData.groups[i].enabled; 
+    saveData(); 
+}
+
+// NEW: Toggle a group between Admin and Driver
+function toggleRole(i) { 
+    localData.groups[i].is_admin = !localData.groups[i].is_admin; 
+    saveData(); 
+}
+
+function deleteGroup(i) { 
+    if(confirm("Delete group?")) { 
+        localData.groups.splice(i, 1); 
+        saveData(); 
+    } 
+}
 
 // --- 5. SCHEDULE & BROADCAST ---
 async function sendBroadcast() {
@@ -214,7 +234,6 @@ function renderHistory() {
     list.innerHTML = "";
     const recent = [...localData.history].reverse().slice(0, 20);
     recent.forEach(h => {
-        // SECURITY FIX: Using textContent to prevent XSS attacks from drivers
         const row = document.createElement("tr");
         
         const dateCell = document.createElement("td");
@@ -241,7 +260,6 @@ function renderHistory() {
     });
 }
 
-// NEW: Activated CSV Download!
 function downloadCSV() {
     if (!localData.history || localData.history.length === 0) {
         return alert("No feedback data to download.");
@@ -270,7 +288,6 @@ function downloadCSV() {
     document.body.removeChild(link);
 }
 
-// NEW: Activated Database Backup Download!
 function downloadBackup() {
     if (!localData) return alert("No data to backup.");
     
