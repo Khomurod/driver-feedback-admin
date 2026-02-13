@@ -1,7 +1,6 @@
 // --- 1. CONFIGURATION ---
 const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
-// NEW: added "enabled: true" to the default schedule
 let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16, minute: 0, enabled: true } };
 
 // --- 2. DATA LOADING & SAVING ---
@@ -17,17 +16,14 @@ async function loadData() {
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
             
-            // Load the weekly schedule, ensuring "enabled" defaults to true if missing
             localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16, minute: 0, enabled: true };
             if (localData.weekly_schedule.enabled === undefined) localData.weekly_schedule.enabled = true;
 
-            // Populate the UI fields
             document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
             const hh = String(localData.weekly_schedule.hour).padStart(2, '0');
             const mm = String(localData.weekly_schedule.minute || 0).padStart(2, '0');
             document.getElementById("weeklyTime").value = `${hh}:${mm}`;
             
-            // Render the toggle button state
             const btnToggle = document.getElementById("btnWeeklyToggle");
             if (localData.weekly_schedule.enabled) {
                 btnToggle.innerText = "ON";
@@ -55,6 +51,7 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
+        // THE FIX: We completely deleted the merge logic. It now safely overwrites the server with exactly what you see!
         const payload = {
             questions: localData.questions,
             groups: localData.groups, 
@@ -70,8 +67,7 @@ async function saveData(loadingBtn = null) {
         });
 
         localData.broadcast_queue = null;
-        await loadData(); 
-
+        // Do not force a reload here, just let it silently succeed to prevent UI flickering
     } catch (e) { 
         alert("Save failed! Make sure your bot is running."); 
         console.error(e); 
@@ -108,12 +104,14 @@ function saveQuestion() {
     else localData.questions[index] = q;
 
     clearForm();
+    renderQuestions();
     saveData(document.getElementById("btnSaveQuestion"));
 }
 
 function deleteQuestion(i) {
     if (confirm("Delete this question?")) {
         localData.questions.splice(i, 1);
+        renderQuestions();
         saveData();
     }
 }
@@ -170,25 +168,38 @@ function renderGroups() {
 
 function toggleGroup(i) { 
     localData.groups[i].enabled = !localData.groups[i].enabled; 
+    renderGroups();
     saveData(); 
 }
 
 function toggleRole(i) { 
     localData.groups[i].is_admin = !localData.groups[i].is_admin; 
+    renderGroups();
     saveData(); 
 }
 
 function deleteGroup(i) { 
     if(confirm("Delete group?")) { 
         localData.groups.splice(i, 1); 
+        renderGroups(); // Instant visual update
         saveData(); 
     } 
 }
 
 // --- 5. SCHEDULE & BROADCAST ---
-// NEW: Function to toggle the weekly schedule ON and OFF
 function toggleWeekly() {
     localData.weekly_schedule.enabled = !localData.weekly_schedule.enabled;
+    
+    // Instant visual update for the button!
+    const btnToggle = document.getElementById("btnWeeklyToggle");
+    if (localData.weekly_schedule.enabled) {
+        btnToggle.innerText = "ON";
+        btnToggle.className = "btn-enabled";
+    } else {
+        btnToggle.innerText = "OFF";
+        btnToggle.className = "btn-disabled";
+    }
+    
     saveData();
 }
 
@@ -204,7 +215,6 @@ function saveWeeklySchedule() {
     const hour = parseInt(hourStr);
     const minute = parseInt(minuteStr);
     
-    // Maintain the current enabled state when saving a new time
     localData.weekly_schedule = { day: day, hour: hour, minute: minute, enabled: localData.weekly_schedule.enabled };
     saveData(document.getElementById("btnSaveWeekly"));
 }
@@ -224,6 +234,7 @@ async function sendSurveyNow() {
     if (!localData.scheduled_queue) localData.scheduled_queue = [];
     localData.scheduled_queue.push(newItem);
     
+    renderSchedule();
     await saveData(document.getElementById("btnSendSurveyNow"));
     alert("Survey sent! Drivers should receive it momentarily.");
 }
@@ -254,6 +265,7 @@ async function scheduleBroadcast() {
     if (!localData.scheduled_queue) localData.scheduled_queue = [];
     localData.scheduled_queue.push(newItem);
     
+    renderSchedule();
     await saveData(document.getElementById("btnSchedule"));
     
     document.getElementById("schedText").value = "";
@@ -285,6 +297,7 @@ function renderSchedule() {
 function deleteSchedule(i) {
     if (confirm("Cancel this message?")) {
         localData.scheduled_queue.splice(i, 1);
+        renderSchedule();
         saveData();
     }
 }
