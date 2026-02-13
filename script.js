@@ -1,7 +1,7 @@
 // --- 1. CONFIGURATION ---
 const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
-let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16 } };
+let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16, minute: 0 } };
 
 // --- 2. DATA LOADING & SAVING ---
 async function loadData() {
@@ -16,9 +16,13 @@ async function loadData() {
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
             
-            localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16 };
+            // NEW: Added minutes logic
+            localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16, minute: 0 };
             document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
-            document.getElementById("weeklyHour").value = localData.weekly_schedule.hour;
+            
+            const hh = String(localData.weekly_schedule.hour).padStart(2, '0');
+            const mm = String(localData.weekly_schedule.minute || 0).padStart(2, '0');
+            document.getElementById("weeklyTime").value = `${hh}:${mm}`;
             
             renderAll();
             if (statusLabel) statusLabel.innerText = "✅ Connected to Bot";
@@ -61,7 +65,6 @@ async function saveData(loadingBtn = null) {
             body: JSON.stringify(payload)
         });
 
-        // THE FIX: Sync back with the server so our browser forgets sent messages!
         await loadData();
 
     } catch (e) { 
@@ -175,13 +178,17 @@ function deleteGroup(i) {
 // --- 5. SCHEDULE & BROADCAST ---
 function saveWeeklySchedule() {
     const day = parseInt(document.getElementById("weeklyDay").value);
-    const hour = parseInt(document.getElementById("weeklyHour").value);
+    const timeStr = document.getElementById("weeklyTime").value; // e.g., "16:30"
     
-    if (isNaN(day) || isNaN(hour) || hour < 0 || hour > 23) {
-        return alert("Please enter a valid hour between 0 and 23.");
+    if (!timeStr) {
+        return alert("Please select a valid time.");
     }
     
-    localData.weekly_schedule = { day: day, hour: hour };
+    const [hourStr, minuteStr] = timeStr.split(":");
+    const hour = parseInt(hourStr);
+    const minute = parseInt(minuteStr);
+    
+    localData.weekly_schedule = { day: day, hour: hour, minute: minute };
     saveData(document.getElementById("btnSaveWeekly"));
 }
 
@@ -339,5 +346,4 @@ function downloadBackup() {
     document.body.removeChild(link);
 }
 
-// Start up
 loadData();
