@@ -59,29 +59,50 @@
         </div>
 
         <div class="card">
-            <h2>3. Announcements</h2>
+            <h2>3. Scheduling & Announcements</h2>
             
-            <div class="card-body" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
-                <label>📢 Send Immediately</label>
+            <div class="card-body" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label>🔄 Automated Weekly Survey Prompt</label>
+                <div class="form-row" style="align-items: center;">
+                    <select id="weeklyDay" style="width: 150px; margin-right: 10px;">
+                        <option value="0">Sunday</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                    </select>
+                    <span style="font-weight: 500; margin-right: 10px;">at Hour:</span>
+                    <input type="number" id="weeklyHour" min="0" max="23" style="width: 80px; margin-right: 10px;" placeholder="0-23">
+                    <button id="btnSaveWeekly" onclick="saveWeeklySchedule()" class="btn-success">Save Schedule</button>
+                </div>
+                <small>Select the day and hour (0-23 server time) the bot will automatically send the weekly survey.</small>
+            </div>
+
+            <div class="card-body" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label>📢 Send One-Off Message Immediately</label>
                 <div class="form-row">
                     <input type="text" id="broadcastText" placeholder="Message to all drivers..." style="flex-grow:1;">
                     <button id="btnBroadcast" onclick="sendBroadcast()" class="btn-warning">Send Now</button>
                 </div>
             </div>
 
-            <br>
-
             <div class="card-body" style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
-                <label>jg Schedule for Later</label>
+                <label>jg Schedule a Custom Message for Later</label>
                 <div class="form-row">
                     <input type="text" id="schedText" placeholder="Message content..." style="flex-grow:1;">
                     <input type="datetime-local" id="schedTime" style="width: 200px;">
                     <button id="btnSchedule" onclick="scheduleBroadcast()" class="btn-primary">Schedule</button>
                 </div>
-                <small>Server checks every minute. (Use local time, bot will adjust)</small>
+                <div style="margin-top: 10px;">
+                    <input type="checkbox" id="schedIncludeSurvey"> 
+                    <label for="schedIncludeSurvey" style="display:inline; font-weight:normal; cursor:pointer;">Attach "Take the Survey" button to this message</label>
+                </div>
+                <small style="display:block; margin-top:5px;">Server checks every minute. (Use local time, bot will adjust)</small>
             </div>
 
-            <h3>Upcoming Queue</h3>
+            <h3 style="margin-top: 20px;">Upcoming Custom Queue</h3>
             <ul id="scheduleList" class="clean-list"></ul>
         </div>
 
