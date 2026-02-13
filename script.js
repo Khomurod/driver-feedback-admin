@@ -1,7 +1,6 @@
 // --- 1. CONFIGURATION ---
 const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
-// NEW: added weekly_schedule default
 let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16 } };
 
 // --- 2. DATA LOADING & SAVING ---
@@ -17,7 +16,6 @@ async function loadData() {
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
             
-            // NEW: Load the saved weekly schedule and update the UI
             localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16 };
             document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
             document.getElementById("weeklyHour").value = localData.weekly_schedule.hour;
@@ -49,7 +47,6 @@ async function saveData(loadingBtn = null) {
             if (!mergedGroups.find(lg => lg.id === sg.id)) mergedGroups.push(sg);
         });
 
-        // NEW: include weekly_schedule in payload
         const payload = {
             questions: localData.questions,
             groups: mergedGroups,
@@ -177,7 +174,6 @@ function deleteGroup(i) {
 }
 
 // --- 5. SCHEDULE & BROADCAST ---
-// NEW: Function to save the dynamic weekly schedule
 function saveWeeklySchedule() {
     const day = parseInt(document.getElementById("weeklyDay").value);
     const hour = parseInt(document.getElementById("weeklyHour").value);
@@ -188,6 +184,26 @@ function saveWeeklySchedule() {
     
     localData.weekly_schedule = { day: day, hour: hour };
     saveData(document.getElementById("btnSaveWeekly"));
+}
+
+// NEW: Function to instantly trigger the survey
+async function sendSurveyNow() {
+    if (!confirm("Are you sure you want to send the survey to all drivers right now?")) return;
+    
+    const surveyText = "Hey, hope your week is going well. Please take the small survey clicking on the button below, that'd help us improve our services. Thank you";
+    
+    const newItem = {
+        id: Date.now(),
+        text: surveyText,
+        time: new Date().toISOString(), // Targets 'right now'
+        includeSurvey: true
+    };
+    
+    if (!localData.scheduled_queue) localData.scheduled_queue = [];
+    localData.scheduled_queue.push(newItem);
+    
+    await saveData(document.getElementById("btnSendSurveyNow"));
+    alert("Survey sent! Drivers should receive it momentarily.");
 }
 
 async function sendBroadcast() {
