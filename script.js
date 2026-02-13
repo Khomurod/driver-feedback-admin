@@ -1,14 +1,15 @@
-// REPLACE WITH YOUR PANTRY ID
-const PANTRY_ID = "42f7bc17-4c7d-4314-9a0d-19f876d39db6";
-const PANTRY_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/driver_data`;
+// --- 1. CONFIGURATION ---
+// This points to your new secure local bot API instead of Pantry
+const API_URL = "http://localhost:8000/api/data";
 
 let localData = { questions: [], groups: [], history: [], scheduled_queue: [] };
 
+// --- 2. DATA LOADING & SAVING ---
 async function loadData() {
     const statusLabel = document.getElementById("statusLabel");
     if (statusLabel) statusLabel.innerText = "🔄 Loading...";
     try {
-        const res = await fetch(PANTRY_URL);
+        const res = await fetch(API_URL);
         if (res.ok) {
             const data = await res.json();
             localData.questions = data.questions || [];
@@ -17,9 +18,12 @@ async function loadData() {
             localData.scheduled_queue = data.scheduled_queue || [];
             
             renderAll();
-            if (statusLabel) statusLabel.innerText = "✅ Ready";
+            if (statusLabel) statusLabel.innerText = "✅ Connected to Bot";
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Failed to connect to API:", e); 
+        if (statusLabel) statusLabel.innerText = "❌ Connection Failed";
+    }
 }
 
 async function saveData(loadingBtn = null) {
@@ -31,30 +35,26 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
-        // Smart Sync: Get latest data first
-        const res = await fetch(PANTRY_URL);
+        // Fetch the latest server data first to prevent overwriting new driver feedback
+        const res = await fetch(API_URL);
         const serverData = res.ok ? await res.json() : {};
         
-        // Merge logic
+        // Merge our local groups with any new ones the server found
         const serverGroups = serverData.groups || [];
         const mergedGroups = [...localData.groups];
         serverGroups.forEach(sg => {
             if (!mergedGroups.find(lg => lg.id === sg.id)) mergedGroups.push(sg);
         });
 
-        // Preserve server's last_weekly_run
-        const lastWeeklyRun = serverData.last_weekly_run || "";
-
         const payload = {
             questions: localData.questions,
             groups: mergedGroups,
-            history: serverData.history || [],
             broadcast_queue: localData.broadcast_queue || serverData.broadcast_queue,
             scheduled_queue: localData.scheduled_queue,
-            last_weekly_run: lastWeeklyRun
         };
 
-        await fetch(PANTRY_URL, {
+        // Save safely back to our local API
+        await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -64,8 +64,10 @@ async function saveData(loadingBtn = null) {
         localData.broadcast_queue = null; // clear local
         renderAll();
 
-    } catch (e) { alert("Save failed!"); console.error(e); } 
-    finally {
+    } catch (e) { 
+        alert("Save failed! Make sure your bot is running."); 
+        console.error(e); 
+    } finally {
         if (loadingBtn) {
             loadingBtn.innerText = "✅ Saved";
             setTimeout(() => { loadingBtn.innerText = originalText; loadingBtn.disabled = false; }, 1500);
@@ -80,7 +82,7 @@ function renderAll() {
     renderSchedule();
 }
 
-// --- QUESTIONS ---
+// --- 3. QUESTIONS ---
 function saveQuestion() {
     const text = document.getElementById("questionText").value;
     const type = document.getElementById("questionType").value;
@@ -97,7 +99,7 @@ function saveQuestion() {
 }
 
 function deleteQuestion(i) {
-    if (confirm("Delete?")) {
+    if (confirm("Delete this question?")) {
         localData.questions.splice(i, 1);
         saveData();
     }
@@ -129,7 +131,7 @@ function renderQuestions() {
     });
 }
 
-// --- GROUPS ---
+// --- 4. GROUPS ---
 function renderGroups() {
     const list = document.getElementById("groupsList");
     list.innerHTML = "";
@@ -139,7 +141,6 @@ function renderGroups() {
         li.innerHTML = `
             <span>${g.name} <small>(${g.id})</small></span>
             <div>
-                <button onclick="toggleRole(${i})" style="font-size:12px; background:${g.is_admin ? '#8e44ad' : '#27ae60'}; color:white;">${g.is_admin ? 'Admin' : 'Driver'}</button>
                 <button onclick="toggleGroup(${i})" class="${g.enabled ? 'btn-enabled' : 'btn-disabled'}">${g.enabled ? 'ON' : 'OFF'}</button>
                 <button class="btn-sm btn-danger" onclick="deleteGroup(${i})">🗑</button>
             </div>`;
@@ -147,10 +148,9 @@ function renderGroups() {
     });
 }
 function toggleGroup(i) { localData.groups[i].enabled = !localData.groups[i].enabled; saveData(); }
-function toggleRole(i) { localData.groups[i].is_admin = !localData.groups[i].is_admin; saveData(); }
 function deleteGroup(i) { if(confirm("Delete group?")) { localData.groups.splice(i, 1); saveData(); } }
 
-// --- SCHEDULE & BROADCAST ---
+// --- 5. SCHEDULE & BROADCAST ---
 async function sendBroadcast() {
     const text = document.getElementById("broadcastText").value;
     if (!text) return alert("Empty message");
@@ -166,11 +166,10 @@ async function scheduleBroadcast() {
     
     if (!text || !timeVal) return alert("Enter text and time.");
     
-    // Create new scheduled item
     const newItem = {
         id: Date.now(),
         text: text,
-        time: new Date(timeVal).toISOString() // Save as UTC string
+        time: new Date(timeVal).toISOString() 
     };
     
     if (!localData.scheduled_queue) localData.scheduled_queue = [];
@@ -209,19 +208,82 @@ function deleteSchedule(i) {
     }
 }
 
-// --- HISTORY & DOWNLOADS ---
+// --- 6. HISTORY & DOWNLOADS ---
 function renderHistory() {
     const list = document.getElementById("historyList");
     list.innerHTML = "";
     const recent = [...localData.history].reverse().slice(0, 20);
     recent.forEach(h => {
-        const answers = h.answers.map(a => `<b>${a.question}:</b> ${a.answer}`).join("<br>");
+        // SECURITY FIX: Using textContent to prevent XSS attacks from drivers
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${new Date(h.date).toLocaleString()}</td><td>${h.user}</td><td>${answers}</td>`;
+        
+        const dateCell = document.createElement("td");
+        dateCell.textContent = new Date(h.date).toLocaleString();
+        
+        const userCell = document.createElement("td");
+        userCell.textContent = h.user;
+
+        const answersCell = document.createElement("td");
+        h.answers.forEach(a => {
+            const p = document.createElement("p");
+            p.style.margin = "0 0 5px 0";
+            p.innerHTML = `<b>${a.question}:</b> `;
+            const textSpan = document.createElement("span");
+            textSpan.textContent = a.answer; 
+            p.appendChild(textSpan);
+            answersCell.appendChild(p);
+        });
+
+        row.appendChild(dateCell);
+        row.appendChild(userCell);
+        row.appendChild(answersCell);
         list.appendChild(row);
     });
 }
-function downloadCSV() { /* (Same as before) */ }
-function downloadBackup() { /* (Same as before) */ }
 
+// NEW: Activated CSV Download!
+function downloadCSV() {
+    if (!localData.history || localData.history.length === 0) {
+        return alert("No feedback data to download.");
+    }
+
+    let csvContent = "Date,Driver,Question,Answer\n";
+    
+    localData.history.forEach(h => {
+        const dateStr = new Date(h.date).toLocaleString().replace(/,/g, '');
+        const userStr = h.user.replace(/,/g, '');
+        
+        h.answers.forEach(a => {
+            const qStr = a.question.replace(/,/g, '');
+            const aStr = a.answer.replace(/,/g, '');
+            csvContent += `${dateStr},${userStr},${qStr},${aStr}\n`;
+        });
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "driver_feedback.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// NEW: Activated Database Backup Download!
+function downloadBackup() {
+    if (!localData) return alert("No data to backup.");
+    
+    const dataStr = JSON.stringify(localData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `database_backup_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Start up
 loadData();
