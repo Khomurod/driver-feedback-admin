@@ -1,7 +1,8 @@
 // --- 1. CONFIGURATION ---
 const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
-let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16, minute: 0 } };
+// NEW: added "enabled: true" to the default schedule
+let localData = { questions: [], groups: [], history: [], scheduled_queue: [], weekly_schedule: { day: 5, hour: 16, minute: 0, enabled: true } };
 
 // --- 2. DATA LOADING & SAVING ---
 async function loadData() {
@@ -16,12 +17,25 @@ async function loadData() {
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
             
-            localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16, minute: 0 };
+            // Load the weekly schedule, ensuring "enabled" defaults to true if missing
+            localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16, minute: 0, enabled: true };
+            if (localData.weekly_schedule.enabled === undefined) localData.weekly_schedule.enabled = true;
+
+            // Populate the UI fields
             document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
-            
             const hh = String(localData.weekly_schedule.hour).padStart(2, '0');
             const mm = String(localData.weekly_schedule.minute || 0).padStart(2, '0');
             document.getElementById("weeklyTime").value = `${hh}:${mm}`;
+            
+            // Render the toggle button state
+            const btnToggle = document.getElementById("btnWeeklyToggle");
+            if (localData.weekly_schedule.enabled) {
+                btnToggle.innerText = "ON";
+                btnToggle.className = "btn-enabled";
+            } else {
+                btnToggle.innerText = "OFF";
+                btnToggle.className = "btn-disabled";
+            }
             
             renderAll();
             if (statusLabel) statusLabel.innerText = "✅ Connected to Bot";
@@ -41,7 +55,6 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
-        // THE FIX: We removed the "resurrection" merge logic. It now safely overwrites the server with exactly what you see on your screen.
         const payload = {
             questions: localData.questions,
             groups: localData.groups, 
@@ -57,7 +70,7 @@ async function saveData(loadingBtn = null) {
         });
 
         localData.broadcast_queue = null;
-        await loadData(); // Pull a fresh copy after saving
+        await loadData(); 
 
     } catch (e) { 
         alert("Save failed! Make sure your bot is running."); 
@@ -86,7 +99,6 @@ function saveQuestion() {
     
     if (!text) return alert("Enter question text");
     
-    // NEW SAFETY CHECK: Prevent saving Multiple Choice questions without options
     if (type === 'choice' && options.length === 0) {
         return alert("Please enter at least one option (separated by commas) for Multiple Choice questions.");
     }
@@ -174,6 +186,12 @@ function deleteGroup(i) {
 }
 
 // --- 5. SCHEDULE & BROADCAST ---
+// NEW: Function to toggle the weekly schedule ON and OFF
+function toggleWeekly() {
+    localData.weekly_schedule.enabled = !localData.weekly_schedule.enabled;
+    saveData();
+}
+
 function saveWeeklySchedule() {
     const day = parseInt(document.getElementById("weeklyDay").value);
     const timeStr = document.getElementById("weeklyTime").value; 
@@ -186,7 +204,8 @@ function saveWeeklySchedule() {
     const hour = parseInt(hourStr);
     const minute = parseInt(minuteStr);
     
-    localData.weekly_schedule = { day: day, hour: hour, minute: minute };
+    // Maintain the current enabled state when saving a new time
+    localData.weekly_schedule = { day: day, hour: hour, minute: minute, enabled: localData.weekly_schedule.enabled };
     saveData(document.getElementById("btnSaveWeekly"));
 }
 
