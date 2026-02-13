@@ -1,5 +1,6 @@
 // --- 1. CONFIGURATION ---
-const API_URL = "http://localhost:8000/api/data";
+// Notice the API URL is now pointing to your live Koyeb server!
+const API_URL = "https://rapid-calypso-wenzeinvestmentsllc-99df8b6e.koyeb.app/api/data";
 
 let localData = { questions: [], groups: [], history: [], scheduled_queue: [] };
 
@@ -157,7 +158,6 @@ function toggleGroup(i) {
     saveData(); 
 }
 
-// NEW: Toggle a group between Admin and Driver
 function toggleRole(i) { 
     localData.groups[i].is_admin = !localData.groups[i].is_admin; 
     saveData(); 
