@@ -73,13 +73,14 @@
                         <option value="5">Friday</option>
                         <option value="6">Saturday</option>
                     </select>
-                    <span style="font-weight: 500; margin-right: 10px;">at Hour:</span>
-                    <input type="number" id="weeklyHour" min="0" max="23" style="width: 80px; margin-right: 10px;" placeholder="0-23">
+                    
+                    <span style="font-weight: 500; margin-right: 10px;">at Time (CT):</span>
+                    <input type="time" id="weeklyTime" style="width: 120px; margin-right: 10px;" required>
                     
                     <button id="btnSaveWeekly" onclick="saveWeeklySchedule()" class="btn-success" style="margin-right: 10px;">Save Schedule</button>
                     <button id="btnSendSurveyNow" onclick="sendSurveyNow()" class="btn-warning">Send Now</button>
                 </div>
-                <small>Select the day and hour (0-23 server time) the bot will automatically send the weekly survey.</small>
+                <small>Select the exact day and time (Central Time) the bot will automatically send the weekly survey.</small>
             </div>
 
             <div class="card-body" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
