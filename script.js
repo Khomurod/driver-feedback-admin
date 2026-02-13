@@ -51,7 +51,6 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
-        // THE FIX: We completely deleted the merge logic. It now safely overwrites the server with exactly what you see!
         const payload = {
             questions: localData.questions,
             groups: localData.groups, 
@@ -67,7 +66,10 @@ async function saveData(loadingBtn = null) {
         });
 
         localData.broadcast_queue = null;
-        // Do not force a reload here, just let it silently succeed to prevent UI flickering
+        
+        // THE FINAL FIX: We brought this back! Now that the merge bug is dead, this safely syncs your dashboard with the server, ensuring "Send Now" ghost queues are instantly cleared.
+        await loadData(); 
+
     } catch (e) { 
         alert("Save failed! Make sure your bot is running."); 
         console.error(e); 
@@ -181,7 +183,7 @@ function toggleRole(i) {
 function deleteGroup(i) { 
     if(confirm("Delete group?")) { 
         localData.groups.splice(i, 1); 
-        renderGroups(); // Instant visual update
+        renderGroups(); 
         saveData(); 
     } 
 }
@@ -190,7 +192,6 @@ function deleteGroup(i) {
 function toggleWeekly() {
     localData.weekly_schedule.enabled = !localData.weekly_schedule.enabled;
     
-    // Instant visual update for the button!
     const btnToggle = document.getElementById("btnWeeklyToggle");
     if (localData.weekly_schedule.enabled) {
         btnToggle.innerText = "ON";
