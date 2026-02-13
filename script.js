@@ -16,7 +16,6 @@ async function loadData() {
             localData.history = data.history || [];
             localData.scheduled_queue = data.scheduled_queue || [];
             
-            // NEW: Added minutes logic
             localData.weekly_schedule = data.weekly_schedule || { day: 5, hour: 16, minute: 0 };
             document.getElementById("weeklyDay").value = localData.weekly_schedule.day;
             
@@ -42,19 +41,11 @@ async function saveData(loadingBtn = null) {
     }
 
     try {
-        const res = await fetch(API_URL);
-        const serverData = res.ok ? await res.json() : {};
-        
-        const serverGroups = serverData.groups || [];
-        const mergedGroups = [...localData.groups];
-        serverGroups.forEach(sg => {
-            if (!mergedGroups.find(lg => lg.id === sg.id)) mergedGroups.push(sg);
-        });
-
+        // THE FIX: We removed the "resurrection" merge logic. It now safely overwrites the server with exactly what you see on your screen.
         const payload = {
             questions: localData.questions,
-            groups: mergedGroups,
-            broadcast_queue: localData.broadcast_queue || serverData.broadcast_queue,
+            groups: localData.groups, 
+            broadcast_queue: localData.broadcast_queue,
             scheduled_queue: localData.scheduled_queue,
             weekly_schedule: localData.weekly_schedule
         };
@@ -65,7 +56,8 @@ async function saveData(loadingBtn = null) {
             body: JSON.stringify(payload)
         });
 
-        await loadData();
+        localData.broadcast_queue = null;
+        await loadData(); // Pull a fresh copy after saving
 
     } catch (e) { 
         alert("Save failed! Make sure your bot is running."); 
@@ -91,7 +83,13 @@ function saveQuestion() {
     const type = document.getElementById("questionType").value;
     const options = document.getElementById("optionsInput").value.split(",").map(o => o.trim()).filter(o => o);
     const index = document.getElementById("editIndex").value;
+    
     if (!text) return alert("Enter question text");
+    
+    // NEW SAFETY CHECK: Prevent saving Multiple Choice questions without options
+    if (type === 'choice' && options.length === 0) {
+        return alert("Please enter at least one option (separated by commas) for Multiple Choice questions.");
+    }
 
     const q = { text, type, options };
     if (index === "") localData.questions.push(q);
@@ -178,7 +176,7 @@ function deleteGroup(i) {
 // --- 5. SCHEDULE & BROADCAST ---
 function saveWeeklySchedule() {
     const day = parseInt(document.getElementById("weeklyDay").value);
-    const timeStr = document.getElementById("weeklyTime").value; // e.g., "16:30"
+    const timeStr = document.getElementById("weeklyTime").value; 
     
     if (!timeStr) {
         return alert("Please select a valid time.");
